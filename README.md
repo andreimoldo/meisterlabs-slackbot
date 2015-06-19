@@ -7,3 +7,9 @@ General purpose Slack bot for the Meisterlabs organization.
 ##Lunchbot
 
 ##Fitbot
+
+#Authors
+Andrei Moldovan
+Michael Ostermann
+
+#License
