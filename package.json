@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "lodash": "^3.9.3",
+    "slackbots": "^0.3.0"
+  }
+}
