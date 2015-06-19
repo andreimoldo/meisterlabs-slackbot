@@ -9,7 +9,7 @@ General purpose Slack bot for the Meisterlabs organization.
 ##Fitbot
 
 #Authors
-Andrei Moldovan
-Michael Ostermann
+- Andrei Moldovan
+- Michael Ostermann
 
 #License
