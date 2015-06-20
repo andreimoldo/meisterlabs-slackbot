@@ -48,8 +48,8 @@ FitBot.prototype._sendChallenge = function() {
     var now = moment.tz('Europe/Berlin');
     if (now.day() != 0 && now.day() != 6 && now.hours() > 9 && now.hours() < 17) {
         this._getActiveUsers(function(activeUsers) {
-            var victim = activeUsers[Math.floor(Math.random() * activeUsers.length)];
-            var exercise = this.EXERCISES[Math.floor(Math.random() * this.EXERCISES.length)];
+            var victim = _.sample(activeUsers);
+            var exercise = _.sample(this.EXERCISES);
             console.log('@', victim.name, exercise.quantity, exercise.name, 'NOW!');
         }.bind(this));
     } else {
