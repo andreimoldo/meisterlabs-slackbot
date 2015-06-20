@@ -1,4 +1,3 @@
-var SlackBots = require('slackbots');
 var _ = require('lodash');
 var moment = require('moment-timezone');
 
