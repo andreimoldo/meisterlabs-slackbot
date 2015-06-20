@@ -1,6 +1,10 @@
 {
   "name": "meisterlabs-slackbot",
   "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/andreimoldo/meisterlabs-slackbot.git"
+  },
   "engines": {
     "node": "0.10.x"
   },
@@ -9,6 +13,7 @@
     "express": "^4.12.4",
     "later": "^1.1.6",
     "lodash": "^3.9.3",
+    "request": "^2.58.0",
     "slackbots": "^0.3.0"
   }
 }
