@@ -13,4 +13,4 @@ var createBot = function(name, ready) {
     });
 };
 
-var fitBot = new Fit( {name: 'Coach Carter'} );
+var fitBot = new Fit({name: 'Coach Carter'});
