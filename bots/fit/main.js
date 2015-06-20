@@ -10,19 +10,27 @@ module.exports = {
     exercises: [
         {
             name: 'PUSHUPS',
-            quantity: '10'
+            min: 5,
+            max: 20,
+            unit: ''
         },
         {
             name: 'LUNGES',
-            quantity: '15'
+            min: 5,
+            max: 20,
+            unit: ''
         },
         {
             name: 'WALL SIT',
-            quantity: '30 SECONDS'
+            min: 15,
+            max: 30,
+            unit: 'SECONDS'
         },
         {
             name: 'PLANK',
-            quantity: '30 SECONDS'
+            min: 15,
+            max: 30,
+            unit: 'SECONDS'
         }
     ],
 
@@ -46,7 +54,7 @@ module.exports = {
     initTestJob: function() {
         var schedule =
         later.parse.recur()
-             .every(10).second();
+             .every(2).second();
 
         later.setInterval(this.sendChallenge.bind(this), schedule);
     },
@@ -57,9 +65,17 @@ module.exports = {
 
     sendChallenge: function() {
         var exercise = this.getRandomExercise();
+        var amount = this.getRandomAmount(exercise);
 
         this.getRandomActiveUser().then(function(user) {
-            console.log('@' + user.name, exercise.quantity, exercise.name, 'NOW!');
+            console.log('@' + user.name, amount, exercise.unit, exercise.name, 'NOW!');
         });
+    },
+
+    getRandomAmount: function(exercise) {
+        var max = exercise.max;
+        var min = exercise.min;
+
+        return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 };
