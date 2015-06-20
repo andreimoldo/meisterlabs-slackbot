@@ -41,7 +41,7 @@ FitBot.prototype.init = function() {
 
 FitBot.prototype._start = function() {
     console.log(this._name, 'started');
-    this._sendChallenge();
+    setInterval(this._sendChallenge.bind(this), 30 * 60 * 1000);
 };
 
 FitBot.prototype._sendChallenge = function() {
@@ -55,7 +55,6 @@ FitBot.prototype._sendChallenge = function() {
     } else {
         console.log(this._name, 'is not allowed to send challenges yet!');
     }
-    setTimeout(this._sendChallenge.bind(this), 10000);
 };
 
 FitBot.prototype._getActiveUsers = function(callback) {
