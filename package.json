@@ -13,7 +13,9 @@
     "express": "^4.12.4",
     "later": "^1.1.6",
     "lodash": "^3.9.3",
+    "moment": "^2.10.3",
     "request": "^2.58.0",
-    "slackbots": "^0.3.0"
+    "slackbots": "^0.3.0",
+    "vow": "^0.4.10"
   }
 }

@@ -35,5 +35,5 @@ var Bot = function(props) {
 };
 
 var fitBot = new Bot(require('./bots/fit/main.js'));
-
 var lunchBot = new Bot(require('./bots/lunch/main.js'));
+var gitBot = new Bot(require('./bots/git/main.js'));
