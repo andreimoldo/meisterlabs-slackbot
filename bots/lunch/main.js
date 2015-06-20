@@ -34,7 +34,7 @@ module.exports = {
         this.i = 0;
     },
 
-    handleRequest: function() {
+    handleRequest: function(req, res) {
         if (fs.existsSync(this.getCacheFile()) && !global.testing) {
             var cachedData = JSON.parse(fs.readFileSync(this.getCacheFile()));
             if (_.keys(cachedData).length !== restaurants.length) {
@@ -47,6 +47,7 @@ module.exports = {
         } else {
             this.parsePages();
         }
+        res.status(200).end();
     },
 
     parsePages: function() {
