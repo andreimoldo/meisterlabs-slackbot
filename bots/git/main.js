@@ -18,15 +18,7 @@ module.exports = {
         this.fetchWeeklyCommits()
         .then(this.fetchCommitStats)
         .then(this.sortStats)
-        .then(function(stats) {
-            var best = stats[0];
-            console.log(
-                'Author of the Week: ' + best.name,
-                'Commits: ' + best.count,
-                'Additions: ' + best.additions,
-                'Deletions: ' + best.deletions
-            );
-        })
+        .then(this.postToSlack.bind(this));
     },
 
     fetchWeeklyCommits: function() {
@@ -99,5 +91,17 @@ module.exports = {
         return commits.sort(function(a, b) {
             return a.total < b.total ? 1 : -1;
         });
+    },
+
+    postToSlack: function(stats) {
+        var best = stats[0];
+        var message = [
+            'Author of the Week: ' + best.name,
+            'Commits: ' + best.count,
+            'Additions: ' + best.additions,
+            'Deletions: ' + best.deletions
+        ].join('\n');
+
+        this.api.postMessageToChannel('mt-log', message);
     }
 };

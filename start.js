@@ -34,6 +34,6 @@ var Bot = function(props) {
     return this;
 };
 
-var fitBot = new Bot(require('./bots/fit/main.js'));
-var lunchBot = new Bot(require('./bots/lunch/main.js'));
+// var fitBot = new Bot(require('./bots/fit/main.js'));
+// var lunchBot = new Bot(require('./bots/lunch/main.js'));
 var gitBot = new Bot(require('./bots/git/main.js'));
