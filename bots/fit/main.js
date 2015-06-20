@@ -1,5 +1,5 @@
 var _ = require('lodash');
-var moment = require('moment-timezone');
+var later = require('later');
 
 module.exports = {
     opts: {
@@ -27,27 +27,35 @@ module.exports = {
     ],
 
     initialize: function() {
-        this.sendChallenge();
+        process.env.TEST ?
+            this.initTestJob() :
+            this.initJob();
+    },
+
+    initJob: function() {
+        var schedule =
+        later.parse.recur()
+             .every(1).hour()
+             .after(9).hour()
+             .before(17).hour()
+             .onWeekday();
+
+        later.setInterval(this.sendChallenge.bind(this), schedule);
+    },
+
+    initTestJob: function() {
+        var schedule =
+        later.parse.recur()
+             .every(10).second();
+
+        later.setInterval(this.sendChallenge.bind(this), schedule);
     },
 
     getRandomExercise: function() {
         return _.sample(this.exercises);
     },
 
-    isAllowedToSend: function() {
-        var now = moment.tz('Europe/Berlin');
-
-        var isWeekend = now.day() === 0 || now.day() === 6;
-        var officeWorkingTime = now.hours() > 9 && now.hours() < 17;
-
-        return !isWeekend && officeWorkingTime;
-    },
-
     sendChallenge: function() {
-        if (!this.isAllowedToSend()) {
-            return console.log(this.opts.name, 'is not allowed to send challenges yet!');
-        }
-
         var exercise = this.getRandomExercise();
 
         this.getRandomActiveUser().then(function(user) {
