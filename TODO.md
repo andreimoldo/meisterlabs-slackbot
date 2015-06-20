@@ -5,7 +5,6 @@
 #Fit
 
 - Icon
-- Get a list of all users
 - Randomly post challenges (https://github.com/brandonshin/slackbot-workout)
 - Users can reply with /done or something and they get points for that
 - Save points into some json db (maybe https://github.com/typicode/lowdb)
