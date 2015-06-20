@@ -35,7 +35,7 @@ module.exports = {
     initJob: function() {
         var schedule =
         later.parse.recur()
-             .every(1).hour()
+             .every(1).hour() // TODO some random deviation so it comes unexpectedly? :P
              .after(9).hour()
              .before(17).hour()
              .onWeekday();
