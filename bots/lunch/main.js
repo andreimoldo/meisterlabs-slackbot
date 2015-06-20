@@ -5,15 +5,14 @@ var moment = require('moment-timezone');
 var _ = require('lodash');
 
 
-restaurants: [
+var restaurants = [
     'rathaus',
     'cantinetta',
     'michls',
     'billa'
 ].map(function(name) {
-    require('./restaurants/' + name + '.js');
+    return require('./restaurants/' + name + '.js');
 });
-console.log(restaurants);
 
 
 module.exports = {
