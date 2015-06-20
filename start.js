@@ -1,16 +1,37 @@
 var SlackBot = require('slackbots');
 var _ = require('lodash');
 
-var Fit = require('./bots/fit/main.js');
+var Bot = function(props) {
+    var self = this;
 
-var createBot = function(name, ready) {
-    var bot = new SlackBot({
+    this.opts = {
+        name: '', // Username of the bot in slack
+        emoji: '' // :icon: of the bot that gets displayed as an avatar in slack
+    };
+
+    _.extend(this, props);
+
+    this.api = new SlackBot({
         token: process.env.SLACK_TOKEN,
-        name: name
+        name: this.opts.name
     })
     .on('open', function() {
-        ready(bot);
+        self.initialize();
     });
+
+    this.getActiveUsers = function() {
+        return this.api.getUsers().then(function(data) {
+            return _.where(data.members, {presence: 'active'});
+        });
+    };
+
+    this.getRandomActiveUser = function() {
+        return this.getActiveUsers().then(function(users) {
+            return _.sample(users);
+        });
+    };
+
+    return this;
 };
 
-var fitBot = new Fit({name: 'Coach Carter'});
+var fitBot = new Bot(require('./bots/fit/main.js'));
