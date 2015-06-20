@@ -59,10 +59,7 @@ FitBot.prototype._sendChallenge = function() {
 
 FitBot.prototype._getActiveUsers = function(callback) {
     this._api.getUsers().then(function(data) {
-        var activeMembers = _.filter(data.members, function(member) {
-            return member.presence && member.presence === 'active';
-        });
-        callback(activeMembers);
+        callback(_.where(data.members, {presence: 'active'}));
     });
 };
 
