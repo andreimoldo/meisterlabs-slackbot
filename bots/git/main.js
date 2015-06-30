@@ -5,8 +5,8 @@ var vow = require('vow');
 
 module.exports = {
     opts: {
-        name: 'Gitbot',
-        emoji: ':muscle:'
+        username: 'Gitbot',
+        icon_emoji: ':muscle:'
     },
 
     initialize: function() {
@@ -102,6 +102,6 @@ module.exports = {
             'Deletions: ' + best.deletions
         ].join('\n');
 
-        this.api.postMessageToChannel('mt-log', message);
+        this.postMessageToChannel('mt-log', message);
     }
 };

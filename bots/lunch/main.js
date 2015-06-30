@@ -18,8 +18,8 @@ var restaurants = [
 
 module.exports = {
     opts: {
-        name: 'Lunchbot',
-        emoji: ':fork_and_knife'
+        username: 'Lunchbot',
+        icon_emoji: ':fork_and_knife'
     },
 
     initialize: function() {
@@ -78,7 +78,7 @@ module.exports = {
 
     postToSlack: function() {
         var menu = this.getTodaysMenus();
-        this.api.postMessageToChannel('testing', menu);
+        this.postMessageToChannel('testing', menu);
     },
 
     getTodaysMenus: function() {

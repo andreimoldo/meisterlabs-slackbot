@@ -3,8 +3,8 @@ var later = require('later');
 
 module.exports = {
     opts: {
-        name: 'Coach Carter',
-        emoji: ':muscle:'
+        username: 'Coach Carter',
+        icon_emoji: ':muscle:'
     },
 
     exercises: [
