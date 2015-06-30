@@ -1,7 +1,6 @@
 var cheerio = require('cheerio');
-var express = require('express');
 var fs = require('fs');
-var moment = require('moment-timezone');
+var moment = require('moment');
 var request = require('request');
 var _ = require('lodash');
 
@@ -19,35 +18,37 @@ var restaurants = [
 module.exports = {
     opts: {
         username: 'Lunchbot',
-        icon_emoji: ':fork_and_knife'
+        icon_emoji: ':fork_and_knife:'
     },
 
     initialize: function() {
         console.log('Lunchbot initializing');
-        this.app = express();
-        this.port = process.env.PORT || 3001;
-        this.app.all('/lunch', this.handleRequest.bind(this));
-        this.app.listen(this.port, function() {
-            console.log('Lunchbot is listening');
-        });
+        this.api.on('message', this.handleMessage.bind(this));
+        console.log('Lunchbot is listening to messages');
         this.result = {};
         this.i = 0;
     },
 
-    handleRequest: function(req, res) {
-        if (fs.existsSync(this.getCacheFile()) && !global.testing) {
-            var cachedData = JSON.parse(fs.readFileSync(this.getCacheFile()));
-            if (_.keys(cachedData).length !== restaurants.length) {
-                // A new restaurant has been added, reparse
-                this.parsePages();
-            } else {
-                this.result = cachedData;
-                this.postToSlack();
-            }
-        } else {
-            this.parsePages();
+    handleMessage: function(data) {
+        if (data.type !== 'message') {
+            return;
         }
-        res.status(200).end();
+        if (data.text.startsWith('@lunch')) {
+            // TODO - get channel from data and respond in that channel
+            // TODO - get user and add response: 'Sure, ZZZ, here's what's on the menu today
+            if (fs.existsSync(this.getCacheFile()) && !global.testing) {
+                var cachedData = JSON.parse(fs.readFileSync(this.getCacheFile()));
+                if (_.keys(cachedData).length !== restaurants.length) {
+                    // A new restaurant has been added, reparse
+                    this.parsePages();
+                } else {
+                    this.result = cachedData;
+                    this.postToSlack();
+                }
+            } else {
+                this.parsePages();
+            }
+        }
     },
 
     parsePages: function() {
@@ -147,4 +148,8 @@ global.String.prototype.reFormat = function() {
     result = result.replace(/(\w)\:(\w)/g, '$1: $2');
 
     return result;
+};
+
+global.String.prototype.startsWith = function(it) {
+    return(this.indexOf(it) === 0);
 };

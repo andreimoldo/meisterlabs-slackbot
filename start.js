@@ -7,7 +7,7 @@ var API = new SlackBot({
 .on('open', function() {
     console.log('Bot is ready!');
     // var fitBot = new Bot(require('./bots/fit/main.js'));
-    // var lunchBot = new Bot(require('./bots/lunch/main.js'));
+    var lunchBot = new Bot(require('./bots/lunch/main.js'));
     // var gitBot = new Bot(require('./bots/git/main.js'));
     // new Bot({
     //     opts: {
@@ -16,7 +16,8 @@ var API = new SlackBot({
     //     },
     //     initialize: function() {
     //         console.log(this.opts);
-    //         this.api.postMessageToChannel('mt-dev', 'meow! :)', this.opts);
+    //         // this.api.postMessageToChannel('mt-dev', 'meow! :)', this.opts);
+    //
     //     }
     // });
 });
