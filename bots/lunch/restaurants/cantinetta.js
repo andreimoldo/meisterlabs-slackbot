@@ -3,7 +3,7 @@ module.exports = {
     emoji: ':spaghetti:',
     uri: 'http://www.lacantinetta.at/index.php?id=menu',
     parse: function($) {
-        var data = {};
+        var data = [];
         var $days = $('.dayentry', '#menue');
 
         $days.each(function(i, day) {
@@ -19,11 +19,11 @@ module.exports = {
                 }
             });
             var price = foods.pop();
-            data[i] = (
+            data.push((
                 foods.join('\n').trim() +
                 ' € ' +
                 parseInt(price).toFixed(2).replace('.', ',')
-            ).reFormat();
+            ).reFormat());
         });
 
         return data;

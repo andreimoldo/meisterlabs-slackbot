@@ -3,7 +3,7 @@ module.exports = {
     'emoji': ':meat_on_bone:',
     'uri': 'http://www.michls.at/mittagsmen%C3%BC.aspx',
     parse: function($) {
-        var data = {};
+        var data = [];
         var $days = $('table', '#ctl00_mainContent_ctl03_ctl01_lblPlan');
 
         $days.slice(1).each(function(i, day) {
@@ -26,7 +26,7 @@ module.exports = {
                 });
                 dailies.push(daily);
             });
-            data[i] = dailies.join('\n').reFormat();
+            data.push(dailies.join('\n').reFormat());
         });
 
         return data;

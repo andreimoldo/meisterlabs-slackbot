@@ -4,7 +4,7 @@ module.exports = {
     emoji: ':stew:',
     uri: 'http://www.caferathaus.at/speisekarte.php',
     parse: function($) {
-        var data = {};
+        var data = [];
         var $days = $('.tagesmenu', '#diese_woche');
 
         $days.each(function(i, day) {
@@ -27,7 +27,7 @@ module.exports = {
               );
           });
 
-          data[i] = foods.join('\n').reFormat();
+          data.push(foods.join('\n').reFormat());
         });
 
         return data;
