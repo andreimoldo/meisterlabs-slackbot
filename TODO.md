@@ -14,8 +14,4 @@
 - some command where users can request an extra workout
 
 #lunch
-- icon
-- port over stuff from `meister-lunchbot`
-- change caching to be a scheduled job
-- fix cache file logic
-- fix the whole this.i logic - bleah
+- remove old entries from database
