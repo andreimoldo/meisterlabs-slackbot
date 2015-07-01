@@ -1,5 +1,6 @@
 var cheerio = require('cheerio');
 var fs = require('fs');
+var later = require('later');
 var low = require('lowdb')
 var moment = require('moment');
 var request = require('request');
@@ -8,8 +9,7 @@ var _ = require('lodash');
 var restaurants = [
     'rathaus',
     'cantinetta',
-    'michls',
-    'billa'
+    'michls'
 ].map(function(name) {
     return require('./restaurants/' + name + '.js');
 });
@@ -25,12 +25,17 @@ module.exports = {
         this.db = low('./data/lunch.db');
         // test data
         if (process.env.TEST) {
-            this.db('menus').push({ week: moment().isoWeek(), day: moment().day(), name: 'that new place', options: 'test1\ntest2'});
+            this.db('menus').remove();
+            this.parsePages();
         }
+        // delayed job to get data
+        var schedule = later.parse.recur()
+            .on(1).dayOfWeek()
+            .on(3).hour();
+        later.setInterval(this.parsePages.bind(this), schedule);
+
         // slack message handler
         this.api.on('message', this.handleMessage.bind(this));
-        this.result = {};
-        this.i = 0;
     },
 
     handleMessage: function(data) {
@@ -41,90 +46,39 @@ module.exports = {
         if (data.text.startsWith('@lunch')) {
             // TODO - get channel from data and respond in that channel
             // get today's menu from db
-            menus = this.db('menus').where({week: moment().isoWeek(), day: moment().day() });
+            menus = this.db('menus').where({week: moment().isoWeek(), day: (moment().day() + 7) % 8});
             // post menu
             message = this.buildMessage(menus);
-            this.postToSlack(channel, message);
+            this.postMessageToChannel('testing', message);
         }
-        // OLD SHIT
-        //     if (fs.existsSync(this.getCacheFile()) && !global.testing) {
-        //         var cachedData = JSON.parse(fs.readFileSync(this.getCacheFile()));
-        //         if (_.keys(cachedData).length !== restaurants.length) {
-        //             // A new restaurant has been added, reparse
-        //             this.parsePages();
-        //         } else {
-        //             this.result = cachedData;
-        //             this.postToSlack();
-        //         }
-        //     } else {
-        //         this.parsePages();
-        //     }
-        // }
     },
 
     parsePages: function() {
         var self = this;
-        restaurants.forEach(function(restaurant) {
-            if (!restaurant.uri) {
-                self.result[restaurant.name] = {
-                    message: restaurant.message
-                };
-                return self.doneParsingRestaurant();
-            }
+        _.forEach(restaurants, function(restaurant) {
+            request( { uri: restaurant.uri, headers: { 'User-Agent': 'Chrome' } }, function(err, res, body) {
+                if (err) {
+                    return console.log('Error when trying to load ' + restaurant.name, err);
+                }
 
-            request({uri: restaurant.uri, headers: {'User-Agent': 'Chrome'}}, function(err, res, body) {
-                if (err) return console.log('Error when trying to load ' + restaurant.name, err);
-                self.result[restaurant.name] = restaurant.parse(cheerio.load(body));
-                self.doneParsingRestaurant();
+                var menus = restaurant.parse(cheerio.load(body));
+                _.forEach(menus, function(menu, index) {
+                    self.db('menus').push({
+                        'week': moment().isoWeek(),
+                        'day': index,
+                        'name': restaurant.name,
+                        'emoji': restaurant.emoji,
+                        'options': menu
+                    });
+                });
             });
         });
     },
 
-    doneParsingRestaurant: function() {
-        this.i++;
-        if (this.i === restaurants.length) {
-            this.saveCache();
-            this.postToSlack();
-        }
-    },
-
-    postToSlack: function() {
-        var menu = this.getTodaysMenus();
-        this.postMessageToChannel('testing', menu);
-    },
-
-    getTodaysMenus: function() {
-        var menus = '';
-        var weekday = (moment().day() + 7) % 8;
-        var self = this;
-        _.each(restaurants, function(restaurant) {
-            var menu = self.result[restaurant.name];
-            menu = menu.message || menu[weekday];
-            menus += restaurant.emoji + ' ' +
-                     restaurant.name + '\n' +
-                     menu + '\n\n';
-
-        });
-        return menus.trim();
-    },
-
-    saveCache: function() {
-        if (!fs.existsSync('./cache/')) fs.mkdirSync('./cache/');
-        fs.writeFileSync(this.getCacheFile(), JSON.stringify(this.result), 'utf8');
-        fs.exists(this.getPreviousCacheFile(), function(exists) {
-            if (exists) fs.unlink(this.getPreviousCacheFile());
-        });
-    },
-
-    getCacheFile: function() {
-        var weekNumber = moment().isoWeek();
-        return './cache/' + weekNumber + '.json';
-    },
-
-    getPreviousCacheFile: function() {
-        var weekNumber = moment().isoWeek();
-        var prevWeekNumber = moment().week(weekNumber - 1).isoWeek();
-        return './cache/' + prevWeekNumber + '.json';
+    buildMessage: function(menus) {
+        return _.reduce(menus, function(message, menu) {
+            return message + '\n' + menu.emoji + ' ' + menu.name + '\n' + menu.options;
+        }, '');
     }
 };
 
