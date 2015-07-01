@@ -1,9 +1,9 @@
 var cheerio = require('cheerio');
 var fs = require('fs');
+var low = require('lowdb')
 var moment = require('moment');
 var request = require('request');
 var _ = require('lodash');
-
 
 var restaurants = [
     'rathaus',
@@ -14,7 +14,6 @@ var restaurants = [
     return require('./restaurants/' + name + '.js');
 });
 
-
 module.exports = {
     opts: {
         username: 'Lunchbot',
@@ -22,9 +21,14 @@ module.exports = {
     },
 
     initialize: function() {
-        console.log('Lunchbot initializing');
+        // database
+        this.db = low('./data/lunch.db');
+        // test data
+        if (process.env.TEST) {
+            this.db('menus').push({ week: moment().isoWeek(), day: moment().day(), name: 'that new place', options: 'test1\ntest2'});
+        }
+        // slack message handler
         this.api.on('message', this.handleMessage.bind(this));
-        console.log('Lunchbot is listening to messages');
         this.result = {};
         this.i = 0;
     },
@@ -33,22 +37,29 @@ module.exports = {
         if (data.type !== 'message') {
             return;
         }
+
         if (data.text.startsWith('@lunch')) {
             // TODO - get channel from data and respond in that channel
-            // TODO - get user and add response: 'Sure, ZZZ, here's what's on the menu today
-            if (fs.existsSync(this.getCacheFile()) && !global.testing) {
-                var cachedData = JSON.parse(fs.readFileSync(this.getCacheFile()));
-                if (_.keys(cachedData).length !== restaurants.length) {
-                    // A new restaurant has been added, reparse
-                    this.parsePages();
-                } else {
-                    this.result = cachedData;
-                    this.postToSlack();
-                }
-            } else {
-                this.parsePages();
-            }
+            // get today's menu from db
+            menus = this.db('menus').where({week: moment().isoWeek(), day: moment().day() });
+            // post menu
+            message = this.buildMessage(menus);
+            this.postToSlack(channel, message);
         }
+        // OLD SHIT
+        //     if (fs.existsSync(this.getCacheFile()) && !global.testing) {
+        //         var cachedData = JSON.parse(fs.readFileSync(this.getCacheFile()));
+        //         if (_.keys(cachedData).length !== restaurants.length) {
+        //             // A new restaurant has been added, reparse
+        //             this.parsePages();
+        //         } else {
+        //             this.result = cachedData;
+        //             this.postToSlack();
+        //         }
+        //     } else {
+        //         this.parsePages();
+        //     }
+        // }
     },
 
     parsePages: function() {
