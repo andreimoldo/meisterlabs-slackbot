@@ -15,3 +15,5 @@ See bots/fit/README.md
 - Michael Ostermann
 
 #License
+
+MIT
