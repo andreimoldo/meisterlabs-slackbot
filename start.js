@@ -9,17 +9,6 @@ var API = new SlackBot({
     // var fitBot = new Bot(require('./bots/fit/main.js'));
     var lunchBot = new Bot(require('./bots/lunch/main.js'));
     // var gitBot = new Bot(require('./bots/git/main.js'));
-    // new Bot({
-    //     opts: {
-    //         username: 'Happybot',
-    //         icon_emoji: ':cat:'
-    //     },
-    //     initialize: function() {
-    //         console.log(this.opts);
-    //         // this.api.postMessageToChannel('mt-dev', 'meow! :)', this.opts);
-    //
-    //     }
-    // });
 });
 
 var Bot = function(props) {
