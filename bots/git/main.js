@@ -102,6 +102,6 @@ module.exports = {
             'Deletions: ' + best.deletions
         ].join('\n');
 
-        this.postMessageToChannel('mt-log', message);
+        this.postMessageToChannel('testing', message);
     }
 };
