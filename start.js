@@ -32,7 +32,7 @@ var Bot = function(props) {
     };
 
     this.postMessageToChannel = function(channel, message) {
-        this.api.postMessageToChannel(channel, message, this.opts);
+        this.api.postMessage(channel, message, this.opts);
     };
 
     return this;
