@@ -1,81 +1,46 @@
 var _ = require('lodash');
-var later = require('later');
 
-module.exports = {
-    opts: {
-        username: 'Coach Carter',
-        icon_emoji: ':muscle:'
-    },
+var isLobsterbotMention = require('../is-lobsterbot-mention');
+var isMessage = require('../is-message');
+var messageContains = require('../message-contains');
+var getRandomActiveUser = require('../get-random-active-user');
+var generateMention = require('../generate-mention');
+var exercises = require('./exercises');
 
-    exercises: [
-        {
-            name: 'PUSHUPS',
-            min: 5,
-            max: 20,
-            unit: ''
-        },
-        {
-            name: 'LUNGES',
-            min: 5,
-            max: 20,
-            unit: ''
-        },
-        {
-            name: 'WALL SIT',
-            min: 15,
-            max: 30,
-            unit: 'SECONDS'
-        },
-        {
-            name: 'PLANK',
-            min: 15,
-            max: 30,
-            unit: 'SECONDS'
-        }
-    ],
+var generateExercise = function(exercises, user) {
+    var randomExc = _.sample(exercises);
+    return [
+        generateMention(user),
+        getRandomAmount(randomExc),
+        randomExc.unit,
+        randomExc.name,
+        'NOW!'
+    ].join(' ');
+};
 
-    initialize: function() {
-        process.env.TEST ?
-            this.initTestJob() :
-            this.initJob();
-    },
+var getRandomAmount = function(exercise) {
+    var max = exercise.max;
+    var min = exercise.min;
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+};
 
-    initJob: function() {
-        var schedule =
-        later.parse.recur()
-             .every(1).hour() // TODO some random deviation so it comes unexpectedly? :P
-             .after(9).hour()
-             .before(17).hour()
-             .onWeekday();
+var isValidMessage = function(data) {
+    return isMessage(data) && isLobsterbotMention(data) && messageContains('fit', data);
+};
 
-        later.setInterval(this.sendChallenge.bind(this), schedule);
-    },
+module.exports = function(API) {
+    console.log('Fitbot running');
 
-    initTestJob: function() {
-        var schedule =
-        later.parse.recur()
-             .every(2).second();
+    API.on('message', function(data) {
+        if (!isValidMessage(data)) return;
 
-        later.setInterval(this.sendChallenge.bind(this), schedule);
-    },
-
-    getRandomExercise: function() {
-        return _.sample(this.exercises);
-    },
-
-    sendChallenge: function() {
-        var exercise = this.getRandomExercise();
-        var amount = this.getRandomAmount(exercise);
-
-        this.getRandomActiveUser().then(function(user) {
-            console.log('@' + user.name, amount, exercise.unit, exercise.name, 'NOW!');
+        getRandomActiveUser(API)
+        .then(function(user) {
+            var message = generateExercise(exercises, user);
+            API.postMessage(data.channel, message, {
+                username: 'Coach Carter',
+                icon_emoji: ':muscle:'
+            });
         });
-    },
-
-    getRandomAmount: function(exercise) {
-        var max = exercise.max;
-        var min = exercise.min;
-
-        return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
+    });
 };

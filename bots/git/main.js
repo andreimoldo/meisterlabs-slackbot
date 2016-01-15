@@ -3,105 +3,151 @@ var _ = require('lodash');
 var moment = require('moment');
 var vow = require('vow');
 
-module.exports = {
-    opts: {
-        username: 'Gitbot',
-        icon_emoji: ':muscle:'
-    },
+var isLobsterbotMention = require('../is-lobsterbot-mention');
 
-    initialize: function() {
-        this.postWeeklyKing();
-    },
+var requestedWeeklyKing = function(text) {
+    text = text.toLowerCase();
+    return /weekly/.test(text) && /king/.test(text);
+};
 
-    postWeeklyKing: function() {
-        var self = this;
-        this.fetchWeeklyCommits()
-        .then(this.fetchCommitStats)
-        .then(this.sortStats)
-        .then(this.postToSlack.bind(this));
-    },
+var getLastMondayDate = function() {
+    return moment()
+    .set('day', 1)
+    .set('hour', 0)
+    .set('minute', 0)
+    .format('YYYY-MM-DDTHH:MM:SSZ');
+};
 
-    fetchWeeklyCommits: function() {
-        var self = this;
-        var deferred = vow.defer();
-        var lastMonday = moment()
-                        .set('day', 1)
-                        .set('hour', 0)
-                        .set('minute', 0)
-                        .format('YYYY-MM-DDTHH:MM:SSZ');
+var getHeaders = function() {
+    return {
+        accept: '*/*',
+        'user-agent': 'Meisterbot'
+    };
+};
 
-        request.get('https://' + process.env.GITHUB_TOKEN + '@api.github.com/repos/meisterlabs/meistertask/commits', {
-            qs: {
-                sha: 'master_unstable',
-                since: lastMonday
-            },
-            headers: {
-                accept: '*/*',
-                'user-agent': 'Meisterbot'
-            }
-        }, function(err, res, body) {
-            body = JSON.parse(body);
-            deferred.resolve(body);
-        });
-
-        return deferred.promise();
-    },
-
-    fetchCommitStats: function(commits) {
-        var deferred = vow.defer();
-        var result = [];
-        var fetched = 0;
-
-        _.each(commits, function(commit) {
-            var sha = commit.sha;
-            request.get('https://' + process.env.GITHUB_TOKEN + '@api.github.com/repos/meisterlabs/meistertask/commits/' + sha, {
-                headers: {
-                    accept: '*/*',
-                    'user-agent': 'Meisterbot'
-                }
+var fetch = function(repo, branch, day) {
+    var deferred = vow.defer();
+    request.get('https://' + process.env.GITHUB_TOKEN + '@api.github.com/repos/meisterlabs/' + repo + '/commits', {
+        qs: {
+            sha: branch,
+            since: getLastMondayDate()
+        },
+        headers: getHeaders(),
+    }, function(err, res, body) {
+        var data = JSON.parse(body).map(function(commit) {
+            var deferred1 = vow.defer();
+            request.get('https://' + process.env.GITHUB_TOKEN + '@api.github.com/repos/meisterlabs/' + repo + '/commits/' + commit.sha, {
+                headers: getHeaders()
             }, function(err, res, body) {
-                fetched++;
-                body = JSON.parse(body);
-                var author = body.committer.login;
-                var existing = _.findWhere(result, {name: author});
-                if (existing) {
-                    existing.additions += body.stats.additions;
-                    existing.deletions += body.stats.deletions;
-                    existing.total += body.stats.total;
-                    existing.count += 1;
-                } else {
-                    result.push({
-                        name: author,
-                        count: 1,
-                        additions: body.stats.additions,
-                        deletions: body.stats.deletions,
-                        total: body.stats.total
-                    });
-                }
-                if (fetched === commits.length) {
-                    deferred.resolve(result);
-                }
+                deferred1.resolve(JSON.parse(body));
             });
+            return deferred1.promise();
         });
+        deferred.resolve(vow.all(data));
+    });
+    return deferred.promise();
+};
 
-        return deferred.promise();
+module.exports = {
+    initialize: function() {
+        this.api.on('message', this.handleMessage.bind(this));
     },
 
-    sortStats: function(commits) {
-        return commits.sort(function(a, b) {
-            return a.total < b.total ? 1 : -1;
+    handleMessage: function(data) {
+        if (data.type !== 'message') return;
+        var text = data.text;
+        if (!isLobsterbotMention(text)) return;
+        if (requestedWeeklyKing(text)) this.postWeeklyKing(data);
+    },
+
+    postWeeklyKing: function(data) {
+        var self = this;
+        vow.all([
+            fetch('meistertask', 'master_unstable', getLastMondayDate()),
+            fetch('meistertask_desktop', 'master', getLastMondayDate()),
+            fetch('mindmeister', 'master', getLastMondayDate()),
+        ])
+        .then(function(data) {
+            return _.flatten(data);
+        })
+        .then(this.getStats)
+        .then(this.getBest)
+        .then(this.constructMessage)
+        .then(function(message) {
+            self.api.postMessage(data.channel, '`meistertask:unstable`, `meistertask_desktop:master`, `mindmeister:master`', message);
         });
     },
 
-    postToSlack: function(stats) {
-        var best = stats[0];
-        var message = [
-            'Author of the Week: ' + best.name,
-            'Commits: ' + best.count,
-            'Additions: ' + best.additions,
-            'Deletions: ' + best.deletions
-        ].join('\n');
+    getStats: function(commits) {
+        var result = [];
 
-        this.postMessageToChannel('testing', message);
+        commits.forEach(function(commit) {
+            var author = commit.committer.login;
+            var existing = _.findWhere(result, {name: author});
+            if (existing) {
+                existing.additions += commit.stats.additions;
+                existing.deletions += commit.stats.deletions;
+                existing.count += 1;
+            } else {
+                result.push({
+                    name: author,
+                    avatar: commit.committer.avatar_url,
+                    count: 1,
+                    additions: commit.stats.additions,
+                    deletions: commit.stats.deletions
+                });
+            }
+        });
+
+        return vow.resolve(result);
+    },
+
+    getBest: function(users) {
+        var result = {
+            commits: [0],
+            additions: [0],
+            deletions: [0]
+        };
+
+        users.forEach(function(user) {
+            if (user.count > result.commits[0]) {
+                result.commits = [user.count, user.name, user.avatar];
+            }
+            if (user.additions > result.additions[0]) {
+                result.additions = [user.additions, user.name, user.avatar];
+            }
+            if (user.deletions > result.deletions[0]) {
+                result.deletions = [user.deletions, user.name, user.avatar];
+            }
+        });
+
+        return result;
+    },
+
+    constructMessage: function(stats) {
+        return {
+            username: 'Weekly King',
+            icon_emoji: ':muscle:',
+            attachments: JSON.stringify([
+                {
+                    author_name: stats.commits[1],
+                    author_icon: stats.commits[2],
+                    title: 'Commits: ' + stats.commits[0],
+                    color: 'warning'
+                },
+                {
+                    author_name: stats.additions[1],
+                    author_icon: stats.additions[2],
+                    title: 'Additions: ' + stats.additions[0],
+                    color: 'good'
+                },
+                {
+                    author_name: stats.deletions[1],
+                    author_icon: stats.deletions[2],
+                    title: 'Deletions: ' + stats.deletions[0],
+                    color: 'danger'
+                }
+            ])
+        };
     }
 };
